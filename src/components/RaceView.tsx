@@ -88,6 +88,44 @@ export function RaceView({ race, onClose, onRaceUpdated, simulationMode }: RaceV
     };
   }, [race.id, user]);
 
+  // Auto-set checkpoint if race is full but checkpoint is missing
+  useEffect(() => {
+    const setMissingCheckpoint = async () => {
+      if (participants.length >= currentRace.max_participants &&
+          (!currentRace.checkpoint_lat || !currentRace.checkpoint_lng)) {
+
+        // Get the last participant who joined (not the creator)
+        const lastParticipant = participants.find(p => p.user_id !== currentRace.creator_id);
+        if (!lastParticipant || !lastParticipant.joined_lat || !lastParticipant.joined_lng) {
+          return;
+        }
+
+        const R = 6371;
+        const dLat = (parseFloat(lastParticipant.joined_lat) - currentRace.start_lat) * Math.PI / 180;
+        const dLon = (parseFloat(lastParticipant.joined_lng) - currentRace.start_lng) * Math.PI / 180;
+        const a =
+          Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos(currentRace.start_lat * Math.PI / 180) * Math.cos(parseFloat(lastParticipant.joined_lat) * Math.PI / 180) *
+          Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const distanceKm = R * c;
+
+        await supabase
+          .from('races')
+          .update({
+            checkpoint_lat: parseFloat(lastParticipant.joined_lat),
+            checkpoint_lng: parseFloat(lastParticipant.joined_lng),
+            distance_km: distanceKm,
+          })
+          .eq('id', race.id);
+
+        await fetchRaceData();
+      }
+    };
+
+    setMissingCheckpoint();
+  }, [participants, currentRace, race.id]);
+
   useEffect(() => {
     if (currentRace.countdown_started_at && !currentRace.actual_start_time) {
       const startedAt = new Date(currentRace.countdown_started_at).getTime();
