@@ -75,19 +75,33 @@ export function RaceView({ race, onClose, onRaceUpdated, simulationMode }: RaceV
     fetchRaceData();
 
     const channel = supabase
-      .channel(`race_${race.id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'race_participants', filter: `race_id=eq.${race.id}` }, () => {
+      .channel(`race_${race.id}_${Date.now()}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'race_participants',
+        filter: `race_id=eq.${race.id}`
+      }, (payload) => {
+        console.log('Participant change detected:', payload);
         fetchParticipants();
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'races', filter: `id=eq.${race.id}` }, () => {
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'races',
+        filter: `id=eq.${race.id}`
+      }, (payload) => {
+        console.log('Race change detected:', payload);
         fetchRaceData();
       })
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Race view subscription status:', status);
+      });
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [race.id, user]);
+  }, [race.id]);
 
   // Auto-set checkpoint if race is full but checkpoint is missing
   useEffect(() => {

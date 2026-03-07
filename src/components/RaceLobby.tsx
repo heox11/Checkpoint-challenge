@@ -51,14 +51,26 @@ export function RaceLobby({ onJoinRace, onViewRace }: RaceLobbyProps) {
     fetchRaces();
 
     const channel = supabase
-      .channel('races_changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'races' }, () => {
+      .channel(`races_lobby_${Date.now()}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'races'
+      }, (payload) => {
+        console.log('Race lobby - races change:', payload);
         fetchRaces();
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'race_participants' }, () => {
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'race_participants'
+      }, (payload) => {
+        console.log('Race lobby - participants change:', payload);
         fetchRaces();
       })
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Race lobby subscription status:', status);
+      });
 
     return () => {
       supabase.removeChannel(channel);
