@@ -67,6 +67,7 @@ export function RaceView({ race, onClose, onRaceUpdated, simulationMode }: RaceV
     if (!error && data) {
       setCurrentRace(data);
     }
+    return data;
   };
 
   useEffect(() => {
@@ -91,26 +92,29 @@ export function RaceView({ race, onClose, onRaceUpdated, simulationMode }: RaceV
   // Auto-set checkpoint if race is full but checkpoint is missing
   useEffect(() => {
     const setMissingCheckpoint = async () => {
-      if (participants.length >= currentRace.max_participants &&
-          (!currentRace.checkpoint_lat || !currentRace.checkpoint_lng)) {
+      const latestRace = await fetchRaceData();
+      if (!latestRace) return;
+
+      if (participants.length >= latestRace.max_participants &&
+          (!latestRace.checkpoint_lat || !latestRace.checkpoint_lng)) {
 
         // Get the last participant who joined (not the creator)
-        const lastParticipant = participants.find(p => p.user_id !== currentRace.creator_id);
+        const lastParticipant = participants.find(p => p.user_id !== latestRace.creator_id);
         if (!lastParticipant || !lastParticipant.joined_lat || !lastParticipant.joined_lng) {
           return;
         }
 
         const R = 6371;
-        const dLat = (parseFloat(lastParticipant.joined_lat) - currentRace.start_lat) * Math.PI / 180;
-        const dLon = (parseFloat(lastParticipant.joined_lng) - currentRace.start_lng) * Math.PI / 180;
+        const dLat = (parseFloat(lastParticipant.joined_lat) - latestRace.start_lat) * Math.PI / 180;
+        const dLon = (parseFloat(lastParticipant.joined_lng) - latestRace.start_lng) * Math.PI / 180;
         const a =
           Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-          Math.cos(currentRace.start_lat * Math.PI / 180) * Math.cos(parseFloat(lastParticipant.joined_lat) * Math.PI / 180) *
+          Math.cos(latestRace.start_lat * Math.PI / 180) * Math.cos(parseFloat(lastParticipant.joined_lat) * Math.PI / 180) *
           Math.sin(dLon / 2) * Math.sin(dLon / 2);
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         const distanceKm = R * c;
 
-        await supabase
+        const { error } = await supabase
           .from('races')
           .update({
             checkpoint_lat: parseFloat(lastParticipant.joined_lat),
@@ -119,12 +123,16 @@ export function RaceView({ race, onClose, onRaceUpdated, simulationMode }: RaceV
           })
           .eq('id', race.id);
 
-        await fetchRaceData();
+        if (!error) {
+          await fetchRaceData();
+        }
       }
     };
 
-    setMissingCheckpoint();
-  }, [participants, currentRace, race.id]);
+    if (participants.length > 0) {
+      setMissingCheckpoint();
+    }
+  }, [participants.length, race.id]);
 
   useEffect(() => {
     if (currentRace.countdown_started_at && !currentRace.actual_start_time) {
