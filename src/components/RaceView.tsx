@@ -171,6 +171,11 @@ export function RaceView({ race, onClose, onRaceUpdated, simulationMode }: RaceV
     }
   }, [currentRace.countdown_started_at, currentRace.actual_start_time, myParticipation]);
 
+  useEffect(() => {
+    if (!currentRace.actual_start_time || !myParticipation?.is_ready || myParticipation?.status !== 'joined') return;
+    handleStartRace();
+  }, [currentRace.actual_start_time, myParticipation?.id, myParticipation?.is_ready, myParticipation?.status]);
+
   const handleJoinRace = async () => {
     if (!profile) return;
 
@@ -317,7 +322,9 @@ export function RaceView({ race, onClose, onRaceUpdated, simulationMode }: RaceV
 
   const handleStartRace = async () => {
     if (!myParticipation) return;
+    if (myParticipation.status === 'racing') return;
 
+    setMyParticipation((prev) => (prev ? { ...prev, status: 'racing' } : prev));
     setRacing(true);
     setRaceStartTime(Date.now());
     await sensor.startTracking();
@@ -376,7 +383,7 @@ export function RaceView({ race, onClose, onRaceUpdated, simulationMode }: RaceV
       targetParticipant.joined_lng
     );
 
-    const THRESHOLD_KM = 0.04;
+    const THRESHOLD_KM = 0.01;
     const currentIndex = myParticipation.current_checkpoint_index || 0;
     const totalCheckpoints = myParticipation.checkpoint_sequence.length;
 
