@@ -21,7 +21,6 @@ export function RaceView({ race, onClose, onRaceUpdated, simulationMode }: RaceV
   const [loading, setLoading] = useState(false);
   const [racing, setRacing] = useState(false);
   const [raceStartTime, setRaceStartTime] = useState<number | null>(null);
-  const [checkpointReached, setCheckpointReached] = useState(false);
   const [canFinish, setCanFinish] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
 
@@ -290,6 +289,18 @@ export function RaceView({ race, onClose, onRaceUpdated, simulationMode }: RaceV
     const allReady = allParticipants?.every(p => p.is_ready);
 
     if (allReady && allParticipants && allParticipants.length >= 2) {
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-checkpoint-sequences`;
+      const headers = {
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+      };
+
+      await fetch(apiUrl, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ raceId: race.id })
+      });
+
       await supabase
         .from('races')
         .update({ countdown_started_at: new Date().toISOString() })
@@ -331,14 +342,6 @@ export function RaceView({ race, onClose, onRaceUpdated, simulationMode }: RaceV
 
   useEffect(() => {
     if (!racing || sensor.latitude === null || sensor.longitude === null || !myParticipation) return;
-    const myStartLat = Number(myParticipation.joined_lat);
-    const myStartLng = Number(myParticipation.joined_lng);
-    if (Number.isNaN(myStartLat) || Number.isNaN(myStartLng)) return;
-
-    const isCreator = user?.id === currentRace.creator_id;
-    const myCheckpointLat = isCreator ? currentRace.checkpoint_lat : currentRace.start_lat;
-    const myCheckpointLng = isCreator ? currentRace.checkpoint_lng : currentRace.start_lng;
-    if (myCheckpointLat == null || myCheckpointLng == null) return;
 
     supabase
       .from('race_participants')
@@ -348,36 +351,50 @@ export function RaceView({ race, onClose, onRaceUpdated, simulationMode }: RaceV
       })
       .eq('id', myParticipation.id);
 
+    if (!myParticipation.checkpoint_sequence || myParticipation.checkpoint_sequence.length === 0) {
+      return;
+    }
+
+    const currentCheckpointUserId = myParticipation.checkpoint_sequence[myParticipation.current_checkpoint_index || 0];
+    const targetParticipant = participants.find(p => p.user_id === currentCheckpointUserId);
+
+    if (!targetParticipant || !targetParticipant.joined_lat || !targetParticipant.joined_lng) {
+      return;
+    }
+
     const checkpointDistance = calculateDistance(
       sensor.latitude,
       sensor.longitude,
-      myCheckpointLat,
-      myCheckpointLng
-    );
-
-    const startDistance = calculateDistance(
-      sensor.latitude,
-      sensor.longitude,
-      myStartLat,
-      myStartLng
+      targetParticipant.joined_lat,
+      targetParticipant.joined_lng
     );
 
     const THRESHOLD_KM = 0.05;
+    const currentIndex = myParticipation.current_checkpoint_index || 0;
+    const totalCheckpoints = myParticipation.checkpoint_sequence.length;
 
-    if (!checkpointReached && checkpointDistance < THRESHOLD_KM) {
-      setCheckpointReached(true);
+    if (checkpointDistance < THRESHOLD_KM && currentIndex < totalCheckpoints - 1) {
+      const nextIndex = currentIndex + 1;
+      supabase
+        .from('race_participants')
+        .update({
+          current_checkpoint_index: nextIndex,
+          checkpoints_visited: (myParticipation.checkpoints_visited || 0) + 1,
+          current_target_user_id: myParticipation.checkpoint_sequence[nextIndex],
+        })
+        .eq('id', myParticipation.id);
     }
 
-    if (checkpointReached && startDistance < THRESHOLD_KM) {
+    if (currentIndex === totalCheckpoints - 1 && checkpointDistance < THRESHOLD_KM) {
       setCanFinish(true);
     }
-  }, [sensor.latitude, sensor.longitude, racing, checkpointReached, currentRace, myParticipation, user?.id]);
+  }, [sensor.latitude, sensor.longitude, racing, myParticipation, participants]);
 
   const handleFinishRace = async () => {
     if (!myParticipation || !raceStartTime) return;
 
     if (!canFinish) {
-      alert('You must reach the checkpoint and return to the start position!');
+      alert('You must visit all checkpoints in order!');
       return;
     }
 
@@ -403,7 +420,6 @@ export function RaceView({ race, onClose, onRaceUpdated, simulationMode }: RaceV
 
     sensor.stopTracking();
     setRacing(false);
-    setCheckpointReached(false);
     setCanFinish(false);
 
     const allParticipants = await supabase
@@ -512,7 +528,7 @@ export function RaceView({ race, onClose, onRaceUpdated, simulationMode }: RaceV
               </div>
             </div>
 
-            {racing && (
+            {racing && myParticipation && (
               <div className="bg-slate-800 border-2 border-[#CEFF00] rounded-lg p-4">
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
@@ -525,18 +541,43 @@ export function RaceView({ race, onClose, onRaceUpdated, simulationMode }: RaceV
                   </div>
                 </div>
 
-                <div className="mb-4 space-y-2">
-                  <div className={`flex items-center gap-2 p-2 rounded ${checkpointReached ? 'bg-green-900/30 border border-green-500' : 'bg-slate-700'}`}>
-                    <div className={`w-3 h-3 rounded-full ${checkpointReached ? 'bg-green-500' : 'bg-slate-500'}`}></div>
-                    <span className={`text-sm font-bold ${checkpointReached ? 'text-green-400' : 'text-slate-400'}`}>
-                      Checkpoint {checkpointReached ? 'Reached' : 'Pending'}
-                    </span>
-                  </div>
-                  <div className={`flex items-center gap-2 p-2 rounded ${canFinish ? 'bg-green-900/30 border border-green-500' : 'bg-slate-700'}`}>
-                    <div className={`w-3 h-3 rounded-full ${canFinish ? 'bg-green-500' : 'bg-slate-500'}`}></div>
-                    <span className={`text-sm font-bold ${canFinish ? 'text-green-400' : 'text-slate-400'}`}>
-                      Return to Start {canFinish ? 'Complete' : 'Pending'}
-                    </span>
+                <div className="mb-4">
+                  <div className="text-slate-400 text-sm mb-2">Checkpoint Progress</div>
+                  <div className="space-y-2">
+                    {myParticipation.checkpoint_sequence?.map((userId, index) => {
+                      const targetParticipant = participants.find(p => p.user_id === userId);
+                      const currentIndex = myParticipation.current_checkpoint_index || 0;
+                      const isCompleted = index < currentIndex;
+                      const isCurrent = index === currentIndex;
+                      const isPending = index > currentIndex;
+
+                      return (
+                        <div
+                          key={index}
+                          className={`flex items-center gap-2 p-2 rounded ${
+                            isCompleted ? 'bg-green-900/30 border border-green-500' :
+                            isCurrent ? 'bg-yellow-900/30 border border-yellow-500' :
+                            'bg-slate-700'
+                          }`}
+                        >
+                          <div className={`w-3 h-3 rounded-full ${
+                            isCompleted ? 'bg-green-500' :
+                            isCurrent ? 'bg-yellow-500' :
+                            'bg-slate-500'
+                          }`}></div>
+                          <span className={`text-sm font-bold flex-1 ${
+                            isCompleted ? 'text-green-400' :
+                            isCurrent ? 'text-yellow-400' :
+                            'text-slate-400'
+                          }`}>
+                            {index + 1}. {targetParticipant?.profiles.username || 'Unknown'}
+                            {userId === user?.id && ' (You)'}
+                          </span>
+                          {isCompleted && <span className="text-green-400 text-xs">✓</span>}
+                          {isCurrent && <span className="text-yellow-400 text-xs">→</span>}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 

@@ -55,6 +55,10 @@ export type RaceParticipant = {
   current_lng?: number | null;
   is_ready?: boolean;
   ready_at?: string | null;
+  checkpoint_sequence?: string[];
+  current_checkpoint_index?: number;
+  checkpoints_visited?: number;
+  current_target_user_id?: string | null;
 };
 
 export type WalletTransaction = {
