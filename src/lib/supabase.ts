@@ -28,12 +28,14 @@ export type Race = {
   distance_km: number;
   start_lat: number;
   start_lng: number;
-  checkpoint_lat: number;
-  checkpoint_lng: number;
+  checkpoint_lat: number | null;
+  checkpoint_lng: number | null;
   status: 'open' | 'in_progress' | 'completed' | 'cancelled';
   max_participants: number;
   start_time: string | null;
   created_at: string;
+  countdown_started_at?: string | null;
+  actual_start_time?: string | null;
 };
 
 export type RaceParticipant = {
@@ -47,6 +49,12 @@ export type RaceParticipant = {
   status: 'joined' | 'racing' | 'finished' | 'disqualified';
   joined_at: string;
   finished_at: string | null;
+  joined_lat?: number | null;
+  joined_lng?: number | null;
+  current_lat?: number | null;
+  current_lng?: number | null;
+  is_ready?: boolean;
+  ready_at?: string | null;
 };
 
 export type WalletTransaction = {

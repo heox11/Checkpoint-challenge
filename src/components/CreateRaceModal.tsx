@@ -170,11 +170,10 @@ export function CreateRaceModal({ onClose, onRaceCreated }: CreateRaceModalProps
                 <input
                   type="number"
                   min="2"
-                  max="50"
+                  max="10"
                   value={formData.maxParticipants}
-                  onChange={(e) => setFormData({ ...formData, maxParticipants: e.target.value })}
-                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded text-white focus:border-[#CEFF00] focus:outline-none"
-                  required
+                  readOnly
+                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded text-white opacity-80"
                 />
               </div>
             </div>

@@ -330,31 +330,36 @@ export function RaceView({ race, onClose, onRaceUpdated, simulationMode }: RaceV
   };
 
   useEffect(() => {
-    if (!racing || sensor.latitude === null || sensor.longitude === null) return;
-    if (!currentRace.checkpoint_lat || !currentRace.checkpoint_lng) return;
+    if (!racing || sensor.latitude === null || sensor.longitude === null || !myParticipation) return;
+    const myStartLat = Number(myParticipation.joined_lat);
+    const myStartLng = Number(myParticipation.joined_lng);
+    if (Number.isNaN(myStartLat) || Number.isNaN(myStartLng)) return;
 
-    if (myParticipation) {
-      supabase
-        .from('race_participants')
-        .update({
-          current_lat: sensor.latitude,
-          current_lng: sensor.longitude,
-        })
-        .eq('id', myParticipation.id);
-    }
+    const isCreator = user?.id === currentRace.creator_id;
+    const myCheckpointLat = isCreator ? currentRace.checkpoint_lat : currentRace.start_lat;
+    const myCheckpointLng = isCreator ? currentRace.checkpoint_lng : currentRace.start_lng;
+    if (myCheckpointLat == null || myCheckpointLng == null) return;
+
+    supabase
+      .from('race_participants')
+      .update({
+        current_lat: sensor.latitude,
+        current_lng: sensor.longitude,
+      })
+      .eq('id', myParticipation.id);
 
     const checkpointDistance = calculateDistance(
       sensor.latitude,
       sensor.longitude,
-      currentRace.checkpoint_lat,
-      currentRace.checkpoint_lng
+      myCheckpointLat,
+      myCheckpointLng
     );
 
     const startDistance = calculateDistance(
       sensor.latitude,
       sensor.longitude,
-      currentRace.start_lat,
-      currentRace.start_lng
+      myStartLat,
+      myStartLng
     );
 
     const THRESHOLD_KM = 0.05;
@@ -366,7 +371,7 @@ export function RaceView({ race, onClose, onRaceUpdated, simulationMode }: RaceV
     if (checkpointReached && startDistance < THRESHOLD_KM) {
       setCanFinish(true);
     }
-  }, [sensor.latitude, sensor.longitude, racing, checkpointReached, currentRace, myParticipation]);
+  }, [sensor.latitude, sensor.longitude, racing, checkpointReached, currentRace, myParticipation, user?.id]);
 
   const handleFinishRace = async () => {
     if (!myParticipation || !raceStartTime) return;
