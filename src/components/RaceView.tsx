@@ -485,6 +485,13 @@ export function RaceView({ race, onClose, onRaceUpdated, simulationMode }: RaceV
               </div>
             )}
 
+            {currentRace.checkpoint_name && (
+              <div className="p-4 bg-slate-800 border border-slate-700 rounded">
+                <div className="text-slate-400 text-sm">Checkpoint</div>
+                <div className="text-[#CEFF00] text-lg font-bold">{currentRace.checkpoint_name}</div>
+              </div>
+            )}
+
             <div className="grid grid-cols-3 gap-4">
               <div className="bg-slate-800 p-4 rounded border border-slate-700">
                 <div className="text-slate-400 text-sm">Distance</div>

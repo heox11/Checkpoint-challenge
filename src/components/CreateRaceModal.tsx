@@ -17,6 +17,9 @@ export function CreateRaceModal({ onClose, onRaceCreated }: CreateRaceModalProps
     title: '',
     entryFee: '5.00',
     maxParticipants: '10',
+    checkpointName: '',
+    checkpointLat: '',
+    checkpointLng: '',
   });
 
   const [useCurrentLocation, setUseCurrentLocation] = useState(true);
@@ -52,6 +55,10 @@ export function CreateRaceModal({ onClose, onRaceCreated }: CreateRaceModalProps
         startLng = parseFloat(customStartLocation.startLng);
       }
 
+      const checkpointLat = formData.checkpointLat ? parseFloat(formData.checkpointLat) : null;
+      const checkpointLng = formData.checkpointLng ? parseFloat(formData.checkpointLng) : null;
+      const checkpointName = formData.checkpointName || null;
+
       const { data: race, error: raceError } = await supabase
         .from('races')
         .insert({
@@ -62,8 +69,9 @@ export function CreateRaceModal({ onClose, onRaceCreated }: CreateRaceModalProps
           distance_km: 0,
           start_lat: startLat,
           start_lng: startLng,
-          checkpoint_lat: null,
-          checkpoint_lng: null,
+          checkpoint_lat: checkpointLat,
+          checkpoint_lng: checkpointLng,
+          checkpoint_name: checkpointName,
           status: 'open',
           max_participants: parseInt(formData.maxParticipants),
         })
@@ -219,8 +227,35 @@ export function CreateRaceModal({ onClose, onRaceCreated }: CreateRaceModalProps
               </div>
             )}
 
-            <div className="p-4 bg-blue-900/20 border border-blue-500/30 rounded text-blue-300 text-sm">
-              <strong>Note:</strong> The checkpoint will be set when another player joins the race using their location.
+            <div className="space-y-3 p-4 bg-slate-800 rounded border border-slate-700">
+              <div className="text-slate-300 text-sm font-bold">
+                Checkpoint (Optional)
+              </div>
+              <input
+                type="text"
+                placeholder="Checkpoint name (e.g., Central Park)"
+                value={formData.checkpointName}
+                onChange={(e) => setFormData({ ...formData, checkpointName: e.target.value })}
+                className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded text-white text-sm focus:border-[#CEFF00] focus:outline-none"
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="number"
+                  step="any"
+                  placeholder="Latitude"
+                  value={formData.checkpointLat}
+                  onChange={(e) => setFormData({ ...formData, checkpointLat: e.target.value })}
+                  className="px-3 py-2 bg-slate-900 border border-slate-600 rounded text-white text-sm focus:border-[#CEFF00] focus:outline-none"
+                />
+                <input
+                  type="number"
+                  step="any"
+                  placeholder="Longitude"
+                  value={formData.checkpointLng}
+                  onChange={(e) => setFormData({ ...formData, checkpointLng: e.target.value })}
+                  className="px-3 py-2 bg-slate-900 border border-slate-600 rounded text-white text-sm focus:border-[#CEFF00] focus:outline-none"
+                />
+              </div>
             </div>
 
             <div className="pt-4 border-t border-slate-800">
