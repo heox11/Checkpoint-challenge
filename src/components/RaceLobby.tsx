@@ -141,10 +141,10 @@ export function RaceLobby({ onJoinRace, onViewRace }: RaceLobbyProps) {
                 e.stopPropagation();
                 onJoinRace(race);
               }}
-              disabled={race.participant_count >= race.max_participants || race.creator_id === user?.id}
+              disabled={race.participant_count >= race.max_participants || race.creator_id === user?.id || !!race.countdown_started_at || !!race.actual_start_time}
               className="w-full sm:w-auto px-4 py-2 bg-[#CEFF00] text-slate-900 font-bold rounded hover:bg-[#bef000] transition-colors disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed uppercase text-xs sm:text-sm"
             >
-              {race.creator_id === user?.id ? 'Your Race' : 'Join Race'}
+              {race.creator_id === user?.id ? 'Your Race' : (race.countdown_started_at || race.actual_start_time) ? 'Started' : 'Join Race'}
             </button>
           </div>
         </div>

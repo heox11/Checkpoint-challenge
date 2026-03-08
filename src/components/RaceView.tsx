@@ -173,6 +173,12 @@ export function RaceView({ race, onClose, onRaceUpdated, simulationMode }: RaceV
   const handleJoinRace = async () => {
     if (!profile) return;
 
+    const { data: latest } = await supabase.from('races').select('countdown_started_at, actual_start_time').eq('id', race.id).single();
+    if (latest?.countdown_started_at || latest?.actual_start_time) {
+      alert('This race has already started.');
+      return;
+    }
+
     setLoading(true);
     try {
       if (profile.wallet_balance < race.entry_fee) {
@@ -288,7 +294,7 @@ export function RaceView({ race, onClose, onRaceUpdated, simulationMode }: RaceV
 
     const allReady = allParticipants?.every(p => p.is_ready);
 
-    if (allReady && allParticipants && allParticipants.length >= 2) {
+    if (allReady && allParticipants && allParticipants.length >= currentRace.max_participants) {
       const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-checkpoint-sequences`;
       const headers = {
         'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
@@ -631,10 +637,10 @@ export function RaceView({ race, onClose, onRaceUpdated, simulationMode }: RaceV
             {!isParticipant && (
               <button
                 onClick={handleJoinRace}
-                disabled={loading || participants.length >= currentRace.max_participants}
+                disabled={loading || participants.length >= currentRace.max_participants || !!currentRace.countdown_started_at || !!currentRace.actual_start_time}
                 className="w-full py-2 sm:py-3 bg-[#CEFF00] text-slate-900 font-bold rounded hover:bg-[#bef000] transition-colors disabled:bg-slate-700 disabled:text-slate-500 uppercase text-sm sm:text-base"
               >
-                {loading ? 'Joining...' : `Join Race - €${currentRace.entry_fee.toFixed(2)}`}
+                {loading ? 'Joining...' : (currentRace.countdown_started_at || currentRace.actual_start_time) ? 'Race Started' : `Join Race - €${currentRace.entry_fee.toFixed(2)}`}
               </button>
             )}
 
@@ -650,11 +656,11 @@ export function RaceView({ race, onClose, onRaceUpdated, simulationMode }: RaceV
                 {!myParticipation.is_ready ? (
                   <button
                     onClick={handleReady}
-                    disabled={!currentRace.checkpoint_lat || !currentRace.checkpoint_lng}
+                    disabled={!currentRace.checkpoint_lat || !currentRace.checkpoint_lng || participants.length < currentRace.max_participants}
                     className="w-full py-2 sm:py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded uppercase flex items-center justify-center gap-2 disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed text-sm sm:text-base"
                   >
                     <Play className="w-4 h-4 sm:w-5 sm:h-5" />
-                    {(!currentRace.checkpoint_lat || !currentRace.checkpoint_lng) ? 'Waiting for Opponent' : "I'm Ready"}
+                    {(participants.length < currentRace.max_participants || !currentRace.checkpoint_lat || !currentRace.checkpoint_lng) ? 'Waiting for Opponent' : "I'm Ready"}
                   </button>
                 ) : (
                   <div className="w-full py-2 sm:py-3 bg-slate-800 border-2 border-green-500 text-green-400 font-bold rounded uppercase flex items-center justify-center gap-2 text-sm sm:text-base">
