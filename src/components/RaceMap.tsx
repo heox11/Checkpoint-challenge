@@ -15,21 +15,40 @@ const defaultIcon = new L.Icon({
 
 L.Marker.prototype.options.icon = defaultIcon;
 
-type ParticipantLocation = {
-  id: string;
-  lat: number;
-  lng: number;
-  username: string;
-};
+function numberedIcon(n: number) {
+  return L.divIcon({
+    className: 'numbered-pin',
+    html: `<div style="
+      width:28px;height:28px;border-radius:50%;background:#CEFF00;color:#0f172a;
+      display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:14px;
+      border:2px solid #0f172a;box-shadow:0 1px 3px rgba(0,0,0,0.4);
+    ">${n}</div>`,
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
+  });
+}
+
+const youIcon = L.divIcon({
+  className: 'you-pin',
+  html: `<div style="
+    width:24px;height:24px;border-radius:50%;background:#3b82f6;color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:bold;
+    border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.5);
+  ">YOU</div>`,
+  iconSize: [24, 24],
+  iconAnchor: [12, 12],
+});
+
+export type OrderedCheckpoint = { lat: number; lng: number };
 
 type RaceMapProps = {
   startLat: number;
   startLng: number;
   checkpointLat?: number | null;
   checkpointLng?: number | null;
+  orderedCheckpoints?: OrderedCheckpoint[];
   currentLat?: number;
   currentLng?: number;
-  participants?: ParticipantLocation[];
 };
 
 function MapUpdater({ center }: { center: [number, number] }) {
@@ -40,20 +59,35 @@ function MapUpdater({ center }: { center: [number, number] }) {
   return null;
 }
 
-export function RaceMap({ startLat, startLng, checkpointLat, checkpointLng, currentLat, currentLng, participants = [] }: RaceMapProps) {
+export function RaceMap({
+  startLat,
+  startLng,
+  checkpointLat,
+  checkpointLng,
+  orderedCheckpoints = [],
+  currentLat,
+  currentLng,
+}: RaceMapProps) {
   const center: [number, number] = [startLat, startLng];
   const [scrollHint, setScrollHint] = useState(false);
 
-  const hasCheckpoint = checkpointLat !== null && checkpointLat !== undefined &&
-                        checkpointLng !== null && checkpointLng !== undefined;
+  const useOrdered = orderedCheckpoints.length > 0;
+  const hasLegacyCheckpoint =
+    checkpointLat != null && checkpointLng != null && !useOrdered;
 
-  const positions: [number, number][] = hasCheckpoint
+  const linePositions: [number, number][] = useOrdered
     ? [
         [startLat, startLng],
-        [checkpointLat, checkpointLng],
+        ...orderedCheckpoints.map((c) => [c.lat, c.lng] as [number, number]),
         [startLat, startLng],
       ]
-    : [[startLat, startLng]];
+    : hasLegacyCheckpoint
+      ? [
+          [startLat, startLng],
+          [checkpointLat!, checkpointLng!],
+          [startLat, startLng],
+        ]
+      : [[startLat, startLng]];
 
   const handleWheel = (e: React.WheelEvent) => {
     if (e.currentTarget.contains(e.target as Node)) {
@@ -85,16 +119,21 @@ export function RaceMap({ startLat, startLng, checkpointLat, checkpointLng, curr
         <MapUpdater center={center} />
 
         <Marker position={[startLat, startLng]} />
-        {hasCheckpoint && <Marker position={[checkpointLat, checkpointLng]} />}
-        {currentLat && currentLng && <Marker position={[currentLat, currentLng]} />}
 
-        {participants.map(p => (
-          p.lat && p.lng && (
-            <Marker key={p.id} position={[p.lat, p.lng]} />
-          )
-        ))}
+        {useOrdered &&
+          orderedCheckpoints.map((c, i) => (
+            <Marker key={i} position={[c.lat, c.lng]} icon={numberedIcon(i + 1)} />
+          ))}
+        {hasLegacyCheckpoint && (
+          <Marker position={[checkpointLat!, checkpointLng!]} />
+        )}
+        {currentLat != null && currentLng != null && (
+          <Marker position={[currentLat, currentLng]} icon={youIcon} />
+        )}
 
-        {positions.length > 1 && <Polyline positions={positions} color="#CEFF00" weight={3} />}
+        {linePositions.length > 1 && (
+          <Polyline positions={linePositions} color="#CEFF00" weight={3} />
+        )}
       </MapContainer>
 
       {scrollHint && (

@@ -489,16 +489,29 @@ export function RaceView({ race, onClose, onRaceUpdated, simulationMode }: RaceV
               startLng={currentRace.start_lng}
               checkpointLat={currentRace.checkpoint_lat}
               checkpointLng={currentRace.checkpoint_lng}
-              currentLat={sensor.latitude || undefined}
-              currentLng={sensor.longitude || undefined}
-              participants={participants
-                .filter(p => p.current_lat && p.current_lng)
-                .map(p => ({
-                  id: p.id,
-                  lat: p.current_lat!,
-                  lng: p.current_lng!,
-                  username: p.profiles.username,
-                }))}
+              orderedCheckpoints={
+                (myParticipation?.checkpoint_sequence?.length
+                  ? myParticipation.checkpoint_sequence
+                  : [...participants].sort(
+                      (a, b) =>
+                        new Date(a.joined_at).getTime() -
+                        new Date(b.joined_at).getTime()
+                    ).map((p) => p.user_id)
+                )
+                  .map((userId: string) => participants.find((p) => p.user_id === userId))
+                  .filter(
+                    (p): p is NonNullable<typeof p> =>
+                      p != null &&
+                      p.joined_lat != null &&
+                      p.joined_lng != null
+                  )
+                  .map((p) => ({
+                    lat: Number(p.joined_lat),
+                    lng: Number(p.joined_lng),
+                  }))
+              }
+              currentLat={sensor.latitude ?? myParticipation?.current_lat ?? undefined}
+              currentLng={sensor.longitude ?? myParticipation?.current_lng ?? undefined}
             />
 
             {(!currentRace.checkpoint_lat || !currentRace.checkpoint_lng) && (
