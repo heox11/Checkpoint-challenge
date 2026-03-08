@@ -451,17 +451,17 @@ export function RaceView({ race, onClose, onRaceUpdated, simulationMode }: RaceV
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
-      <div className="bg-slate-900 border-2 border-[#CEFF00] rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto flex flex-col">
-        <div className="sticky top-0 bg-slate-900 border-b-2 border-slate-800 p-4 z-10 flex items-center justify-between">
-          <h2 className="text-[#CEFF00] text-xl font-bold">{currentRace.title}</h2>
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-2 sm:p-4 z-50">
+      <div className="bg-slate-900 border-2 border-[#CEFF00] rounded-lg max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto flex flex-col">
+        <div className="sticky top-0 bg-slate-900 border-b-2 border-slate-800 p-3 sm:p-4 z-10 flex items-center justify-between">
+          <h2 className="text-[#CEFF00] text-base sm:text-xl font-bold truncate pr-2">{currentRace.title}</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-white flex-shrink-0">
-            <X className="w-6 h-6" />
+            <X className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
         </div>
 
-        <div className="p-6 flex-1">
-          <div className="space-y-6">
+        <div className="p-3 sm:p-6 flex-1">
+          <div className="space-y-3 sm:space-y-6">
             <RaceMap
               startLat={currentRace.start_lat}
               startLng={currentRace.start_lng}
@@ -492,21 +492,21 @@ export function RaceView({ race, onClose, onRaceUpdated, simulationMode }: RaceV
               </div>
             )}
 
-            <div className="grid grid-cols-3 gap-4">
-              <div className="bg-slate-800 p-4 rounded border border-slate-700">
-                <div className="text-slate-400 text-sm">Distance</div>
-                <div className="text-[#CEFF00] text-2xl font-bold">
+            <div className="grid grid-cols-3 gap-2 sm:gap-4">
+              <div className="bg-slate-800 p-2 sm:p-4 rounded border border-slate-700">
+                <div className="text-slate-400 text-xs sm:text-sm">Distance</div>
+                <div className="text-[#CEFF00] text-base sm:text-2xl font-bold">
                   {currentRace.distance_km > 0 ? `${currentRace.distance_km.toFixed(1)} km` : 'TBD'}
                 </div>
               </div>
-              <div className="bg-slate-800 p-4 rounded border border-slate-700">
-                <div className="text-slate-400 text-sm">Entry Fee</div>
-                <div className="text-[#CEFF00] text-2xl font-bold">€{currentRace.entry_fee.toFixed(2)}</div>
+              <div className="bg-slate-800 p-2 sm:p-4 rounded border border-slate-700">
+                <div className="text-slate-400 text-xs sm:text-sm">Entry Fee</div>
+                <div className="text-[#CEFF00] text-base sm:text-2xl font-bold">€{currentRace.entry_fee.toFixed(2)}</div>
               </div>
-              <div className="bg-slate-800 p-4 rounded border border-slate-700">
-                <div className="text-slate-400 text-sm">Prize Pool</div>
-                <div className="text-yellow-500 text-2xl font-bold flex items-center gap-1">
-                  <Trophy className="w-5 h-5" />
+              <div className="bg-slate-800 p-2 sm:p-4 rounded border border-slate-700">
+                <div className="text-slate-400 text-xs sm:text-sm">Prize Pool</div>
+                <div className="text-yellow-500 text-base sm:text-2xl font-bold flex items-center gap-1">
+                  <Trophy className="w-4 h-4 sm:w-5 sm:h-5" />
                   €{currentRace.prize_pool.toFixed(2)}
                 </div>
               </div>
@@ -591,7 +591,7 @@ export function RaceView({ race, onClose, onRaceUpdated, simulationMode }: RaceV
               <button
                 onClick={handleJoinRace}
                 disabled={loading || participants.length >= currentRace.max_participants}
-                className="w-full py-3 bg-[#CEFF00] text-slate-900 font-bold rounded hover:bg-[#bef000] transition-colors disabled:bg-slate-700 disabled:text-slate-500 uppercase"
+                className="w-full py-2 sm:py-3 bg-[#CEFF00] text-slate-900 font-bold rounded hover:bg-[#bef000] transition-colors disabled:bg-slate-700 disabled:text-slate-500 uppercase text-sm sm:text-base"
               >
                 {loading ? 'Joining...' : `Join Race - €${currentRace.entry_fee.toFixed(2)}`}
               </button>
@@ -610,14 +610,14 @@ export function RaceView({ race, onClose, onRaceUpdated, simulationMode }: RaceV
                   <button
                     onClick={handleReady}
                     disabled={!currentRace.checkpoint_lat || !currentRace.checkpoint_lng}
-                    className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded uppercase flex items-center justify-center gap-2 disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed"
+                    className="w-full py-2 sm:py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded uppercase flex items-center justify-center gap-2 disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed text-sm sm:text-base"
                   >
-                    <Play className="w-5 h-5" />
+                    <Play className="w-4 h-4 sm:w-5 sm:h-5" />
                     {(!currentRace.checkpoint_lat || !currentRace.checkpoint_lng) ? 'Waiting for Opponent' : "I'm Ready"}
                   </button>
                 ) : (
-                  <div className="w-full py-3 bg-slate-800 border-2 border-green-500 text-green-400 font-bold rounded uppercase flex items-center justify-center gap-2">
-                    <Play className="w-5 h-5" />
+                  <div className="w-full py-2 sm:py-3 bg-slate-800 border-2 border-green-500 text-green-400 font-bold rounded uppercase flex items-center justify-center gap-2 text-sm sm:text-base">
+                    <Play className="w-4 h-4 sm:w-5 sm:h-5" />
                     Waiting for Others...
                   </div>
                 )}

@@ -104,34 +104,34 @@ export function RaceLobby({ onJoinRace, onViewRace }: RaceLobbyProps) {
       {races.map((race) => (
         <div
           key={race.id}
-          className="bg-slate-900 border-2 border-slate-700 hover:border-[#CEFF00] rounded-lg p-4 transition-all cursor-pointer"
+          className="bg-slate-900 border-2 border-slate-700 hover:border-[#CEFF00] rounded-lg p-3 sm:p-4 transition-all cursor-pointer"
           onClick={() => onViewRace(race)}
         >
-          <div className="flex items-start justify-between mb-3">
-            <div>
-              <h3 className="text-white font-bold text-lg">{race.title}</h3>
-              <div className="flex items-center gap-4 mt-2 text-sm text-slate-400">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-0 mb-3">
+            <div className="flex-1">
+              <h3 className="text-white font-bold text-base sm:text-lg">{race.title}</h3>
+              <div className="flex items-center gap-3 sm:gap-4 mt-2 text-xs sm:text-sm text-slate-400">
                 <div className="flex items-center gap-1">
-                  <MapPin className="w-4 h-4" />
+                  <MapPin className="w-3 h-3 sm:w-4 sm:h-4" />
                   <span>{race.distance_km.toFixed(1)} km</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Users className="w-4 h-4" />
+                  <Users className="w-3 h-3 sm:w-4 sm:h-4" />
                   <span>{race.participant_count}/{race.max_participants}</span>
                 </div>
               </div>
             </div>
-            <div className="text-right">
-              <div className="text-[#CEFF00] font-bold text-2xl">€{race.entry_fee.toFixed(2)}</div>
+            <div className="text-left sm:text-right">
+              <div className="text-[#CEFF00] font-bold text-xl sm:text-2xl">€{race.entry_fee.toFixed(2)}</div>
               <div className="text-slate-400 text-xs">Entry Fee</div>
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-3 border-t border-slate-800">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t border-slate-800">
             <div className="flex items-center gap-2">
-              <Trophy className="w-5 h-5 text-yellow-500" />
+              <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-500" />
               <div>
-                <div className="text-yellow-500 font-bold">€{race.prize_pool.toFixed(2)}</div>
+                <div className="text-yellow-500 font-bold text-sm sm:text-base">€{race.prize_pool.toFixed(2)}</div>
                 <div className="text-xs text-slate-500">Prize Pool</div>
               </div>
             </div>
@@ -142,7 +142,7 @@ export function RaceLobby({ onJoinRace, onViewRace }: RaceLobbyProps) {
                 onJoinRace(race);
               }}
               disabled={race.participant_count >= race.max_participants || race.creator_id === user?.id}
-              className="px-4 py-2 bg-[#CEFF00] text-slate-900 font-bold rounded hover:bg-[#bef000] transition-colors disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed uppercase text-sm"
+              className="w-full sm:w-auto px-4 py-2 bg-[#CEFF00] text-slate-900 font-bold rounded hover:bg-[#bef000] transition-colors disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed uppercase text-xs sm:text-sm"
             >
               {race.creator_id === user?.id ? 'Your Race' : 'Join Race'}
             </button>

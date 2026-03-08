@@ -124,13 +124,13 @@ export function CreateRaceModal({ onClose, onRaceCreated }: CreateRaceModalProps
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
-      <div className="bg-slate-900 border-2 border-[#CEFF00] rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-[#CEFF00] text-2xl font-bold uppercase">Create Race</h2>
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-2 sm:p-4 z-50">
+      <div className="bg-slate-900 border-2 border-[#CEFF00] rounded-lg max-w-md w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+        <div className="p-4 sm:p-6">
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <h2 className="text-[#CEFF00] text-lg sm:text-2xl font-bold uppercase">Create Race</h2>
             <button onClick={onClose} className="text-slate-400 hover:text-white">
-              <X className="w-6 h-6" />
+              <X className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
           </div>
 
@@ -266,7 +266,7 @@ export function CreateRaceModal({ onClose, onRaceCreated }: CreateRaceModalProps
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 bg-[#CEFF00] text-slate-900 font-bold rounded hover:bg-[#bef000] transition-colors disabled:bg-slate-700 disabled:text-slate-500 uppercase"
+                className="w-full py-2 sm:py-3 bg-[#CEFF00] text-slate-900 font-bold rounded hover:bg-[#bef000] transition-colors disabled:bg-slate-700 disabled:text-slate-500 uppercase text-sm sm:text-base"
               >
                 {loading ? 'Creating...' : 'Create Race'}
               </button>
