@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { X, Users, Play, Flag, Trophy, AlertTriangle } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { X, Users, Play, Trophy, AlertTriangle } from 'lucide-react';
 import { supabase, Race, RaceParticipant, Profile } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { RaceMap } from './RaceMap';
@@ -23,6 +23,7 @@ export function RaceView({ race, onClose, onRaceUpdated, simulationMode }: RaceV
   const [raceStartTime, setRaceStartTime] = useState<number | null>(null);
   const [canFinish, setCanFinish] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
+  const finishTriggeredRef = useRef(false);
 
   const sensor = useSensorFusion({
     simulationMode,
@@ -406,6 +407,12 @@ export function RaceView({ race, onClose, onRaceUpdated, simulationMode }: RaceV
     }
   }, [sensor.latitude, sensor.longitude, racing, myParticipation, participants]);
 
+  useEffect(() => {
+    if (!canFinish || !racing || finishTriggeredRef.current) return;
+    finishTriggeredRef.current = true;
+    handleFinishRace();
+  }, [canFinish, racing]);
+
   const handleFinishRace = async () => {
     if (!myParticipation || !raceStartTime) return;
 
@@ -437,6 +444,7 @@ export function RaceView({ race, onClose, onRaceUpdated, simulationMode }: RaceV
     sensor.stopTracking();
     setRacing(false);
     setCanFinish(false);
+    finishTriggeredRef.current = false;
 
     const allParticipants = await supabase
       .from('race_participants')
@@ -617,15 +625,6 @@ export function RaceView({ race, onClose, onRaceUpdated, simulationMode }: RaceV
                     <span className="text-red-400 text-sm font-bold">ANTI-CHEAT TRIGGERED</span>
                   </div>
                 )}
-
-                <button
-                  onClick={handleFinishRace}
-                  disabled={!canFinish}
-                  className="w-full py-3 bg-[#CEFF00] text-slate-900 font-bold rounded hover:bg-[#bef000] uppercase flex items-center justify-center gap-2 disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed"
-                >
-                  <Flag className="w-5 h-5" />
-                  Finish Race
-                </button>
               </div>
             )}
 

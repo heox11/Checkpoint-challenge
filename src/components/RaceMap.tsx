@@ -3,32 +3,31 @@ import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-const defaultIcon = new L.Icon({
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
+const startIcon = L.divIcon({
+  className: 'start-pin',
+  html: `<div style="
+    width:22px;height:22px;border-radius:50%;background:#0ea5e9;color:#fff;
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:10px;
+    border:2px solid #0f172a;box-shadow:0 1px 4px rgba(0,0,0,0.4);
+  ">S</div>`,
+  iconSize: [22, 22],
+  iconAnchor: [11, 11],
 });
-
-L.Marker.prototype.options.icon = defaultIcon;
 
 function checkpointIcon(index: number, status: 'visited' | 'current' | 'pending') {
   const bg = status === 'visited' ? '#22c55e' : status === 'current' ? '#CEFF00' : '#475569';
   const content = status === 'visited' ? '✓' : String(index + 1);
   const isCurrent = status === 'current';
-  const size = isCurrent ? 44 : 36;
+  const size = isCurrent ? 28 : 24;
   const pulse = isCurrent
     ? 'box-shadow:0 0 0 0 rgba(206,255,0,0.6);animation:checkpoint-pulse 1.5s ease-out infinite;'
-    : 'box-shadow:0 2px 8px rgba(0,0,0,0.45);';
+    : 'box-shadow:0 1px 4px rgba(0,0,0,0.4);';
   return L.divIcon({
     className: 'checkpoint-pin',
     html: `<div style="
       width:${size}px;height:${size}px;border-radius:50%;background:${bg};color:#0f172a;
-      display:flex;align-items:center;justify-content:center;font-weight:800;font-size:${isCurrent ? 18 : 16}px;
-      border:3px solid #0f172a;${pulse}
+      display:flex;align-items:center;justify-content:center;font-weight:700;font-size:${isCurrent ? 13 : 12}px;
+      border:2px solid #0f172a;${pulse}
     ">${content}</div>`,
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
@@ -38,12 +37,12 @@ function checkpointIcon(index: number, status: 'visited' | 'current' | 'pending'
 const youIcon = L.divIcon({
   className: 'you-pin',
   html: `<div style="
-    width:32px;height:32px;border-radius:50%;background:#3b82f6;color:#fff;
-    display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;letter-spacing:-0.5px;
-    border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.5);
+    width:26px;height:26px;border-radius:50%;background:#3b82f6;color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;letter-spacing:-0.5px;
+    border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.5);
   ">YOU</div>`,
-  iconSize: [32, 32],
-  iconAnchor: [16, 16],
+  iconSize: [26, 26],
+  iconAnchor: [13, 13],
 });
 
 export type OrderedCheckpoint = { lat: number; lng: number };
@@ -141,7 +140,7 @@ export function RaceMap({
         />
         <MapBoundsUpdater positions={boundsPositions} />
 
-        <Marker position={[startLat, startLng]} />
+        <Marker position={[startLat, startLng]} icon={startIcon} />
 
         {useOrdered &&
           orderedCheckpoints.map((c, i) => {
@@ -151,7 +150,7 @@ export function RaceMap({
             );
           })}
         {hasLegacyCheckpoint && (
-          <Marker position={[checkpointLat!, checkpointLng!]} />
+          <Marker position={[checkpointLat!, checkpointLng!]} icon={checkpointIcon(0, 'current')} />
         )}
         {currentLat != null && currentLng != null && (
           <Marker position={[currentLat, currentLng]} icon={youIcon} />
