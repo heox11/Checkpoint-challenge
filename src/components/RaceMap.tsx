@@ -15,14 +15,16 @@ const defaultIcon = new L.Icon({
 
 L.Marker.prototype.options.icon = defaultIcon;
 
-function numberedIcon(n: number) {
+function checkpointIcon(index: number, status: 'visited' | 'current' | 'pending') {
+  const bg = status === 'visited' ? '#22c55e' : status === 'current' ? '#CEFF00' : '#64748b';
+  const content = status === 'visited' ? '✓' : String(index + 1);
   return L.divIcon({
-    className: 'numbered-pin',
+    className: 'checkpoint-pin',
     html: `<div style="
-      width:28px;height:28px;border-radius:50%;background:#CEFF00;color:#0f172a;
+      width:28px;height:28px;border-radius:50%;background:${bg};color:#0f172a;
       display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:14px;
       border:2px solid #0f172a;box-shadow:0 1px 3px rgba(0,0,0,0.4);
-    ">${n}</div>`,
+    ">${content}</div>`,
     iconSize: [28, 28],
     iconAnchor: [14, 14],
   });
@@ -47,6 +49,7 @@ type RaceMapProps = {
   checkpointLat?: number | null;
   checkpointLng?: number | null;
   orderedCheckpoints?: OrderedCheckpoint[];
+  currentCheckpointIndex?: number;
   currentLat?: number;
   currentLng?: number;
 };
@@ -65,6 +68,7 @@ export function RaceMap({
   checkpointLat,
   checkpointLng,
   orderedCheckpoints = [],
+  currentCheckpointIndex = 0,
   currentLat,
   currentLng,
 }: RaceMapProps) {
@@ -121,9 +125,12 @@ export function RaceMap({
         <Marker position={[startLat, startLng]} />
 
         {useOrdered &&
-          orderedCheckpoints.map((c, i) => (
-            <Marker key={i} position={[c.lat, c.lng]} icon={numberedIcon(i + 1)} />
-          ))}
+          orderedCheckpoints.map((c, i) => {
+            const status = i < currentCheckpointIndex ? 'visited' : i === currentCheckpointIndex ? 'current' : 'pending';
+            return (
+              <Marker key={i} position={[c.lat, c.lng]} icon={checkpointIcon(i, status)} />
+            );
+          })}
         {hasLegacyCheckpoint && (
           <Marker position={[checkpointLat!, checkpointLng!]} />
         )}

@@ -381,6 +381,16 @@ export function RaceView({ race, onClose, onRaceUpdated, simulationMode }: RaceV
 
     if (checkpointDistance < THRESHOLD_KM && currentIndex < totalCheckpoints - 1) {
       const nextIndex = currentIndex + 1;
+      setMyParticipation((prev) =>
+        prev
+          ? {
+              ...prev,
+              current_checkpoint_index: nextIndex,
+              checkpoints_visited: (prev.checkpoints_visited || 0) + 1,
+              current_target_user_id: prev.checkpoint_sequence?.[nextIndex] ?? null,
+            }
+          : prev
+      );
       supabase
         .from('race_participants')
         .update({
@@ -489,6 +499,7 @@ export function RaceView({ race, onClose, onRaceUpdated, simulationMode }: RaceV
               startLng={currentRace.start_lng}
               checkpointLat={currentRace.checkpoint_lat}
               checkpointLng={currentRace.checkpoint_lng}
+              currentCheckpointIndex={myParticipation?.current_checkpoint_index ?? 0}
               orderedCheckpoints={
                 (myParticipation?.checkpoint_sequence?.length
                   ? myParticipation.checkpoint_sequence
