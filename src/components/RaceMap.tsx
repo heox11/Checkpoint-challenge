@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -42,6 +42,7 @@ function MapUpdater({ center }: { center: [number, number] }) {
 
 export function RaceMap({ startLat, startLng, checkpointLat, checkpointLng, currentLat, currentLng, participants = [] }: RaceMapProps) {
   const center: [number, number] = [startLat, startLng];
+  const [scrollHint, setScrollHint] = useState(false);
 
   const hasCheckpoint = checkpointLat !== null && checkpointLat !== undefined &&
                         checkpointLng !== null && checkpointLng !== undefined;
@@ -54,13 +55,28 @@ export function RaceMap({ startLat, startLng, checkpointLat, checkpointLng, curr
       ]
     : [[startLat, startLng]];
 
+  const handleWheel = (e: React.WheelEvent) => {
+    if (e.currentTarget.contains(e.target as Node)) {
+      setScrollHint(true);
+      setTimeout(() => setScrollHint(false), 2000);
+    }
+  };
+
   return (
-    <div className="h-64 rounded-lg overflow-hidden border-2 border-slate-700">
+    <div
+      className="h-64 rounded-lg overflow-hidden border-2 border-slate-700 relative"
+      onWheel={handleWheel}
+    >
       <MapContainer
         center={center}
         zoom={13}
         scrollWheelZoom={false}
-        className="h-full w-full"
+        dragging={true}
+        touchZoom={true}
+        doubleClickZoom={true}
+        zoomControl={true}
+        className="h-full w-full touch-none"
+        style={{ cursor: 'grab' }}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -80,6 +96,14 @@ export function RaceMap({ startLat, startLng, checkpointLat, checkpointLng, curr
 
         {positions.length > 1 && <Polyline positions={positions} color="#CEFF00" weight={3} />}
       </MapContainer>
+
+      {scrollHint && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+          <div className="bg-slate-900/90 border-2 border-[#CEFF00] px-4 py-2 rounded text-[#CEFF00] text-sm font-bold">
+            Use zoom controls to zoom map
+          </div>
+        </div>
+      )}
     </div>
   );
 }

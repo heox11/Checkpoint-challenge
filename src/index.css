@@ -42,3 +42,12 @@
     box-shadow: 0 0 20px rgba(206, 255, 0, 0.3);
   }
 }
+
+.leaflet-container {
+  isolation: isolate;
+  z-index: 0;
+}
+
+.leaflet-container:focus {
+  outline: none;
+}
