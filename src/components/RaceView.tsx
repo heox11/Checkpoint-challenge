@@ -375,7 +375,7 @@ export function RaceView({ race, onClose, onRaceUpdated, simulationMode }: RaceV
       targetParticipant.joined_lng
     );
 
-    const THRESHOLD_KM = 0.05;
+    const THRESHOLD_KM = 0.2;
     const currentIndex = myParticipation.current_checkpoint_index || 0;
     const totalCheckpoints = myParticipation.checkpoint_sequence.length;
 

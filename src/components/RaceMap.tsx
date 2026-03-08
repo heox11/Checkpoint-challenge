@@ -16,29 +16,34 @@ const defaultIcon = new L.Icon({
 L.Marker.prototype.options.icon = defaultIcon;
 
 function checkpointIcon(index: number, status: 'visited' | 'current' | 'pending') {
-  const bg = status === 'visited' ? '#22c55e' : status === 'current' ? '#CEFF00' : '#64748b';
+  const bg = status === 'visited' ? '#22c55e' : status === 'current' ? '#CEFF00' : '#475569';
   const content = status === 'visited' ? '✓' : String(index + 1);
+  const isCurrent = status === 'current';
+  const size = isCurrent ? 44 : 36;
+  const pulse = isCurrent
+    ? 'box-shadow:0 0 0 0 rgba(206,255,0,0.6);animation:checkpoint-pulse 1.5s ease-out infinite;'
+    : 'box-shadow:0 2px 8px rgba(0,0,0,0.45);';
   return L.divIcon({
     className: 'checkpoint-pin',
     html: `<div style="
-      width:28px;height:28px;border-radius:50%;background:${bg};color:#0f172a;
-      display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:14px;
-      border:2px solid #0f172a;box-shadow:0 1px 3px rgba(0,0,0,0.4);
+      width:${size}px;height:${size}px;border-radius:50%;background:${bg};color:#0f172a;
+      display:flex;align-items:center;justify-content:center;font-weight:800;font-size:${isCurrent ? 18 : 16}px;
+      border:3px solid #0f172a;${pulse}
     ">${content}</div>`,
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
   });
 }
 
 const youIcon = L.divIcon({
   className: 'you-pin',
   html: `<div style="
-    width:24px;height:24px;border-radius:50%;background:#3b82f6;color:#fff;
-    display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:bold;
-    border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.5);
+    width:32px;height:32px;border-radius:50%;background:#3b82f6;color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;letter-spacing:-0.5px;
+    border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.5);
   ">YOU</div>`,
-  iconSize: [24, 24],
-  iconAnchor: [12, 12],
+  iconSize: [32, 32],
+  iconAnchor: [16, 16],
 });
 
 export type OrderedCheckpoint = { lat: number; lng: number };
@@ -54,11 +59,19 @@ type RaceMapProps = {
   currentLng?: number;
 };
 
-function MapUpdater({ center }: { center: [number, number] }) {
+function MapBoundsUpdater({
+  positions,
+  padding = 0.15,
+}: {
+  positions: [number, number][];
+  padding?: number;
+}) {
   const map = useMap();
   useEffect(() => {
-    map.setView(center, map.getZoom());
-  }, [center, map]);
+    if (positions.length < 2) return;
+    const bounds = L.latLngBounds(positions);
+    map.fitBounds(bounds.pad(padding), { maxZoom: 16, animate: true });
+  }, [positions, map, padding]);
   return null;
 }
 
@@ -78,6 +91,12 @@ export function RaceMap({
   const useOrdered = orderedCheckpoints.length > 0;
   const hasLegacyCheckpoint =
     checkpointLat != null && checkpointLng != null && !useOrdered;
+
+  const boundsPositions: [number, number][] = useOrdered
+    ? [[startLat, startLng], ...orderedCheckpoints.map((c) => [c.lat, c.lng] as [number, number])]
+    : hasLegacyCheckpoint
+      ? [[startLat, startLng], [checkpointLat!, checkpointLng!]]
+      : [[startLat, startLng]];
 
   const linePositions: [number, number][] = useOrdered
     ? [
@@ -120,7 +139,7 @@ export function RaceMap({
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <MapUpdater center={center} />
+        <MapBoundsUpdater positions={boundsPositions} />
 
         <Marker position={[startLat, startLng]} />
 

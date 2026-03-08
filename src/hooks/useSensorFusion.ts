@@ -32,9 +32,11 @@ export function useSensorFusion(options: UseSensorFusionOptions = {}) {
   const watchIdRef = useRef<number | null>(null);
   const hrDeviceRef = useRef<BluetoothRemoteGATTCharacteristic | null>(null);
   const lastPositionRef = useRef<{ lat: number; lng: number; timestamp: number } | null>(null);
+  const smoothedRef = useRef<{ lat: number; lng: number } | null>(null);
   const cheatTimerRef = useRef<NodeJS.Timeout | null>(null);
   const speedHistoryRef = useRef<number[]>([]);
   const hrHistoryRef = useRef<number[]>([]);
+  const SMOOTH = 0.25;
 
   const calculateSpeed = useCallback((lat1: number, lon1: number, lat2: number, lon2: number, timeDiff: number) => {
     const R = 6371;
@@ -175,9 +177,20 @@ export function useSensorFusion(options: UseSensorFusionOptions = {}) {
       (position) => {
         const actualLat = position.coords.latitude;
         const actualLng = position.coords.longitude;
-        const latitude = overrideLocation?.lat ?? actualLat;
-        const longitude = overrideLocation?.lng ?? actualLng;
+        const rawLat = overrideLocation?.lat ?? actualLat;
+        const rawLng = overrideLocation?.lng ?? actualLng;
         const currentTime = Date.now();
+
+        let latitude: number;
+        let longitude: number;
+        if (smoothedRef.current) {
+          latitude = smoothedRef.current.lat + (rawLat - smoothedRef.current.lat) * SMOOTH;
+          longitude = smoothedRef.current.lng + (rawLng - smoothedRef.current.lng) * SMOOTH;
+        } else {
+          latitude = rawLat;
+          longitude = rawLng;
+        }
+        smoothedRef.current = { lat: latitude, lng: longitude };
 
         let calculatedSpeed = 0;
         if (lastPositionRef.current) {
@@ -185,8 +198,8 @@ export function useSensorFusion(options: UseSensorFusionOptions = {}) {
           calculatedSpeed = calculateSpeed(
             lastPositionRef.current.lat,
             lastPositionRef.current.lng,
-            latitude,
-            longitude,
+            rawLat,
+            rawLng,
             timeDiff
           );
         }
@@ -194,7 +207,7 @@ export function useSensorFusion(options: UseSensorFusionOptions = {}) {
         speedHistoryRef.current.push(calculatedSpeed);
         if (speedHistoryRef.current.length > 10) speedHistoryRef.current.shift();
 
-        lastPositionRef.current = { lat: latitude, lng: longitude, timestamp: currentTime };
+        lastPositionRef.current = { lat: rawLat, lng: rawLng, timestamp: currentTime };
 
         setData(prev => {
           checkForCheat(calculatedSpeed, prev.heartRate);
@@ -224,6 +237,7 @@ export function useSensorFusion(options: UseSensorFusionOptions = {}) {
       navigator.geolocation.clearWatch(watchIdRef.current);
       watchIdRef.current = null;
     }
+    smoothedRef.current = null;
 
     if (cheatTimerRef.current) {
       clearTimeout(cheatTimerRef.current);
@@ -253,6 +267,7 @@ export function useSensorFusion(options: UseSensorFusionOptions = {}) {
 
   useEffect(() => {
     if (overrideLocation && data.isTracking) {
+      smoothedRef.current = { lat: overrideLocation.lat, lng: overrideLocation.lng };
       setData(prev => ({
         ...prev,
         latitude: overrideLocation.lat,

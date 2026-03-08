@@ -43,6 +43,12 @@
   }
 }
 
+@keyframes checkpoint-pulse {
+  to {
+    box-shadow: 0 0 0 16px rgba(206, 255, 0, 0);
+  }
+}
+
 .leaflet-container {
   isolation: isolate;
   z-index: 0;
