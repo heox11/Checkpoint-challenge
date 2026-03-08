@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Polyline, CircleMarker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -56,6 +56,7 @@ type RaceMapProps = {
   currentCheckpointIndex?: number;
   currentLat?: number;
   currentLng?: number;
+  pathTraveled?: [number, number][];
 };
 
 function MapBoundsUpdater({
@@ -83,6 +84,7 @@ export function RaceMap({
   currentCheckpointIndex = 0,
   currentLat,
   currentLng,
+  pathTraveled = [],
 }: RaceMapProps) {
   const center: [number, number] = [startLat, startLng];
   const [scrollHint, setScrollHint] = useState(false);
@@ -155,6 +157,10 @@ export function RaceMap({
         {currentLat != null && currentLng != null && (
           <Marker position={[currentLat, currentLng]} icon={youIcon} />
         )}
+
+        {pathTraveled.map((pos, i) => (
+          <CircleMarker key={i} center={pos} radius={3} pathOptions={{ fillColor: '#3b82f6', color: '#1d4ed8', weight: 1, fillOpacity: 0.9 }} />
+        ))}
 
         {linePositions.length > 1 && (
           <Polyline positions={linePositions} color="#CEFF00" weight={3} />

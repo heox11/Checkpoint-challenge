@@ -24,6 +24,9 @@ export function RaceView({ race, onClose, onRaceUpdated, simulationMode }: RaceV
   const [canFinish, setCanFinish] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
   const finishTriggeredRef = useRef(false);
+  const [pathTraveled, setPathTraveled] = useState<[number, number][]>([]);
+  const lastPathPointRef = useRef<{ lat: number; lng: number } | null>(null);
+  const MIN_DISTANCE_KM = 0.015;
 
   const sensor = useSensorFusion({
     simulationMode,
@@ -327,6 +330,12 @@ export function RaceView({ race, onClose, onRaceUpdated, simulationMode }: RaceV
     setMyParticipation((prev) => (prev ? { ...prev, status: 'racing' } : prev));
     setRacing(true);
     setRaceStartTime(Date.now());
+    const startLat = myParticipation.current_lat ?? myParticipation.joined_lat;
+    const startLng = myParticipation.current_lng ?? myParticipation.joined_lng;
+    if (startLat != null && startLng != null) {
+      setPathTraveled([[startLat, startLng]]);
+      lastPathPointRef.current = { lat: startLat, lng: startLng };
+    }
     await sensor.startTracking();
 
     await supabase
@@ -356,6 +365,15 @@ export function RaceView({ race, onClose, onRaceUpdated, simulationMode }: RaceV
 
   useEffect(() => {
     if (!racing || sensor.latitude === null || sensor.longitude === null || !myParticipation) return;
+
+    const last = lastPathPointRef.current;
+    const shouldAdd =
+      !last ||
+      calculateDistance(sensor.latitude, sensor.longitude, last.lat, last.lng) >= MIN_DISTANCE_KM;
+    if (shouldAdd) {
+      lastPathPointRef.current = { lat: sensor.latitude, lng: sensor.longitude };
+      setPathTraveled((prev) => [...prev, [sensor.latitude!, sensor.longitude!]]);
+    }
 
     supabase
       .from('race_participants')
@@ -451,6 +469,8 @@ export function RaceView({ race, onClose, onRaceUpdated, simulationMode }: RaceV
     sensor.stopTracking();
     setRacing(false);
     setCanFinish(false);
+    setPathTraveled([]);
+    lastPathPointRef.current = null;
     finishTriggeredRef.current = false;
 
     const allParticipants = await supabase
@@ -538,6 +558,7 @@ export function RaceView({ race, onClose, onRaceUpdated, simulationMode }: RaceV
               }
               currentLat={sensor.latitude ?? myParticipation?.current_lat ?? undefined}
               currentLng={sensor.longitude ?? myParticipation?.current_lng ?? undefined}
+              pathTraveled={pathTraveled}
             />
 
             {(!currentRace.checkpoint_lat || !currentRace.checkpoint_lng) && (
