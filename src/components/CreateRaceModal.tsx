@@ -16,7 +16,7 @@ export function CreateRaceModal({ onClose, onRaceCreated }: CreateRaceModalProps
   const [formData, setFormData] = useState({
     title: '',
     entryFee: '5.00',
-    maxParticipants: '10',
+    maxParticipants: '2',
     checkpointName: '',
     checkpointLat: '',
     checkpointLng: '',
@@ -175,14 +175,22 @@ export function CreateRaceModal({ onClose, onRaceCreated }: CreateRaceModalProps
                 <label className="block text-slate-300 text-sm font-bold mb-2">
                   Max Participants
                 </label>
-                <input
-                  type="number"
-                  min="2"
-                  max="10"
+                <select
                   value={formData.maxParticipants}
-                  readOnly
-                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded text-white opacity-80"
-                />
+                  onChange={(e) => setFormData({ ...formData, maxParticipants: e.target.value })}
+                  className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded text-white focus:border-[#CEFF00] focus:outline-none cursor-pointer"
+                  required
+                >
+                  <option value="2">2 Players</option>
+                  <option value="3">3 Players</option>
+                  <option value="4">4 Players</option>
+                  <option value="5">5 Players</option>
+                  <option value="6">6 Players</option>
+                  <option value="7">7 Players</option>
+                  <option value="8">8 Players</option>
+                  <option value="9">9 Players</option>
+                  <option value="10">10 Players</option>
+                </select>
               </div>
             </div>
 
